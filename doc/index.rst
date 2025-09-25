@@ -1,0 +1,2 @@
+.. toctree::
+    spacedoc.rst
