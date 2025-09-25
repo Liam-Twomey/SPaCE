@@ -1,2 +1,37 @@
-*.gif
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+
+# vim swap files
+*.sw?
+*.swp
+
+# Images
+
+# Distribution / packaging
+.Python
+env/
+venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+temp/
+*.egg-info/
+.installed.cfg
+*.egg
+*.p
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Sphinx documentation
+doc/build/
