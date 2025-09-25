@@ -24,7 +24,7 @@ class spin:
         dist_file: list
             list of lists, shape (2,n): [0] is the x axis of the spin population
             distribution, [1] is the  y-axis. Used only by the histogram mode.
-        hyperfine: float
+        hyperfine: float 
             (endor only) value of the hyperfine coupling between the electron
             and the nucleus.
         nuc: 
@@ -132,12 +132,14 @@ class inversion:
     '''
     This class uses the fourier-transform method to calculate the inversion profile
     for a given pulse.
+
     Parameters
 	----------
     pulse: ``pulse`` object
         A RF pulse.
 
     '''
+
     def __init__(self,pulse):
         self.weights=fftshift(abs(fft(pulse.amp)))
         self.weights/=max(self.weights)
@@ -161,7 +163,7 @@ class trajectory:
 
     Attributes
     ----------
-
+    
     ETC: misc
         All relevant parameters are imported from the ``spin`` object.
 
@@ -191,8 +193,11 @@ class trajectory:
         self.traj_intensity=None
 
     def find_deltaB(self,central_nu=0):
+        '''
+        Calculates $/Delta B$ for the system.
+        '''
         ge=2.0023
-        be=9.27*10**-24 ##J/T
+        be=9.27*10**-24 ##J/Tt
         h=(6.626*10**-34)*(10**9) ##J/Hz
         self.deltaB=(self.nu-central_nu)*h/ge/be
         
@@ -200,6 +205,16 @@ class trajectory:
         return f"trajectory for {self.time[-1]} ns"
     
     def precess(self,t0,t1):
+        '''
+        Calculates the precession between two timepoints.
+
+        Parameters
+        ----------
+        t0 : float
+            initial timepoint
+        t1 : float
+            final timepoint
+        '''
         initial_pos=np.argmin(abs(self.time-t0))
         final_pos=np.argmin(abs(self.time-t1))
         for t in range(final_pos-initial_pos):
@@ -210,12 +225,28 @@ class trajectory:
             self.traj[:,2,initial_pos+t+1]=self.traj[:,2,initial_pos+t]  
     
     def flip_angle(self,B1,tp):
+        '''
+        Calculates the flip angle.
+
+        '''
         ge=2.0023
         be=9.27*10**-24 ##J/T
         h=6.626*10**-34/(2*np.pi) ##J/Hz/rad
         self.angle=ge*be*tp*10**-9/h*B1
 
     def flip(self,pulse,t,direction):
+        '''
+        Apply a ``pulse`` to this trajectory starting at time 't'.
+
+        Parameters
+        ----------
+        pulse: ``pulse`` object
+            A pulse to apply to the system
+        t: float
+            Time at which to apply the pulse
+        direction: str
+            The sign and axis of propagation of the pulse (i.e. +x, -y, etc.)
+        '''
         if pulse.type=='rect':
             pos=np.argmin(abs(self.time-t))
             phases=['+x','-x','+y','-y']
@@ -306,11 +337,16 @@ class trajectory:
             self.nu=self.nu+np.multiply(self.dipolar,np.cos(self.tipped_angle))
 
     def calc_intensity(self):
+        '''
+        Calculate the signal (echo) intensity of the trajectory.
+        '''
         n_ms_mat=(self.S*(self.S+1)-self.n_ms*(self.n_ms+1))
         self.traj_intensity=np.einsum('i,ijk->ijk',n_ms_mat,self.traj)
 
     def net_M(self,ms=None):
-        
+        '''
+        Calculate net [magnetization]?
+        '''
         if ms==None:
             mask=self.n_ms!=0
         else:
@@ -318,10 +354,16 @@ class trajectory:
         self.M=np.sum(self.traj_intensity[mask],axis=0)
         
     def flip_n(self,nu):
+        '''
+        Nuclear version of ``flip`` for use in ENDOR sim.
+        '''
         mask=abs(self.n_nu-nu)<0.0003
         self.nu[mask]-=self.hyperfine[mask]
 
     def p_seq(self,x,t0,direction=None,norm_y=1,norm_x=1):
+        '''
+        ??
+        '''
         self.seq=np.copy(self.M)
         for i,j in enumerate(x):
             index0=np.argmin(abs(self.time-t0[i]))
@@ -340,13 +382,32 @@ class trajectory:
                                                                                                       index0:index1])
                 
     def get_traj(self,nu):
+        '''
+        Return the trajectory.
+        '''
         index=np.argmin(abs(self.nu-nu))
         return self.traj[index]
-
-
-
     
     def display_bloch(self,t0,t1,nu,filename,interval=400,writer='pillow'):
+        '''
+        Write out a gif of the bloch sphere representation of the trajectory.
+
+        Parameters
+        ----------
+        t0: float
+            Start time for animation
+        t1 : float
+            End time for animation
+        nu: float
+            Frequency (relative to Larmour) of spin to display
+        filename: str
+            Name of gif file to output
+        interval: int
+            Length which each frame is displayed (ms)
+        writer: str
+            A matplotlib.animation writer, dictates the engine used to print the output.
+        '''
+
         fig = plt.figure()
         ax = plt.axes(projection='3d')
 
@@ -400,11 +461,43 @@ class trajectory:
         # self.ims=ims
         ani = animation.ArtistAnimation(fig=fig, artists=ims, interval=interval)
         ani.save(filename=filename,writer=writer)
+
 class pulse:
+    '''
+    An object representation of an RF/MW pulse.
+
+    Parameters
+    ----------
+    None
+    
+    Attributes
+    ----------
+    tp
+
+    Methods
+    -------
+    rect
+        Generate a rectangular pulse
+    CHIRP
+        Generate a CHIRP or WURST pulse
+    custom
+        Define a custom pulse type
+
+    '''
     def __init__(self):
         pass
 
     def rect(self,alpha,tp):
+        '''
+        Generates a rectangular pulse of time tp and angle alpha.
+
+        Parameters
+        ----------
+        alpha: float
+            The pulse angle
+        tp: float
+            Length of the pulse (ns)
+        '''
         # self.step=step
         self.tp=tp
         ge=2.0023
@@ -417,6 +510,24 @@ class pulse:
         self.type='rect'
     
     def CHIRP(self,tp,f0,f1,alpha,n_wurst,resolution=0.1):
+                '''
+        Generates a chirp pulse of time tp and angle alpha. ?? WURST != CHIRP?
+
+        Parameters
+        ----------
+        alpha: float
+            The pulse angle
+        tp: float
+            Length of the pulse (ns)
+        f0: 
+            Starting frequency
+        f1: 
+            Ending frequency
+        n_wurst: 
+            ??
+        resolution:
+            Frequency step??
+        '''
         self.f0=f0
         self.f1=f1
         self.tp=tp
@@ -435,6 +546,22 @@ class pulse:
         self.type='WURST'
 
     def custom(self,tp,freq,amp,B1,resolution=0.1):
+        '''
+        Method to define a custom pulse
+
+        Parameters
+        ----------
+        tp: float
+            Pulse length
+        freq: float
+            Pulse frequency
+        amp: float
+            Pulse amplitude
+        B1: float
+            Applied magnetic field of pulse
+        resolution: float
+            Resolution for pulse calculation [units??]
+        '''
         self.tp=tp
         self.freq=freq
         self.amp=amp
