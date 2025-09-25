@@ -7,7 +7,67 @@ from scipy.fft import fft,fftfreq,fftshift
 import scipy.stats
 
 class spin:
-    def __init__(self,n,method='Uniform',width=1,dist_file=None,hyperfine=0,nuc=0,dipolar=0,S=1/2,ms=None):
+    def __init__(self,n:int,method:str='Uniform',width:float=1,dist_file:str=None,
+        hyperfine:float=0, nuc:int=0,dipolar=0,S=1/2,ms=None):
+        '''
+        The ``spin`` class generates an object which represents a collection of spins
+
+        Parameters
+        ----------
+        n : int
+            Number of spins to generate 
+        method: str
+            'Uniform' to distribute the spins evenly across the bandwidth,
+            'Histogram' to define a spectral shape (gaussian,etc.)
+        width : float
+            The bandwidth of the experiment, in GHz.
+        dist_file: list
+            list of lists, shape (2,n): [0] is the x axis of the spin population
+            distribution, [1] is the  y-axis. Used only by the histogram mode.
+        hyperfine: float
+            (endor only) value of the hyperfine coupling between the electron
+            and the nucleus.
+        nuc: 
+	        (endor only) number of nuclei coupled to the electron spin
+        dipolar: int
+	        (endor only) the dipolar coupling between spins in the system (must be even)
+        S: float
+            (endor only) The electronic spin of the system.
+        ms: str
+            If not supplied, SPaCE assumes an even distribution across the m_s manifold.
+            If a path to a Numpy binary file containing a 1D array of values between -S
+            and S is provided, that population distribution is used instead.
+
+        Attributes
+        ----------
+        n: int
+            number of spins (set by ``n`` argument)
+        nu: np.array
+
+        ms: np.array
+            Values of $m_s$ available to the spins.
+        S: float
+            electronic spin of the system
+       
+
+        hyperfine: float
+            (ENDOR only) Hyperfine coupling value for these spins with an electron.
+        n_nu: np.array
+            (ENDOR only) Each spin's deviation from the Larmour frequency at the
+            center of the band.
+        n_ms: np.array
+            (ENDOR only) Value of m_s for each spin
+
+        pairing: np.array
+            Used for distance measurements. (WIP)
+        dipolar: np.array
+            Dipolar coupling betweens spins. (WIP)
+        
+        Notes
+        -----
+        In the case of ENDOR mode, the n and nu attributes define the electron spin,
+        while  n_nu and n_ms define the precession frequency and m_s manifold for the nuclei.
+        '''
         self.n=n
         self.n_nu=np.zeros(n)
         self.hyperfine=hyperfine
@@ -67,7 +127,17 @@ class spin:
     
     def __str__(self):
         return f"You have {self.n} spins"
+
 class inversion:
+    '''
+    This class uses the fourier-transform method to calculate the inversion profile
+    for a given pulse.
+    Parameters
+	----------
+    pulse: ``pulse`` object
+        A RF pulse.
+
+    '''
     def __init__(self,pulse):
         self.weights=fftshift(abs(fft(pulse.amp)))
         self.weights/=max(self.weights)
@@ -75,7 +145,30 @@ class inversion:
         if pulse.type != 'rect':
             self.time=pulse.time
             self.f=self.time*((pulse.f1-pulse.f0)/pulse.tp)+pulse.f0
+
 class trajectory:
+    '''
+    The precession sequence of the system
+
+    Parameters
+    ----------
+    t: float
+        Length of the precession period, in ns
+    dt: float
+        Time step to simulate at (temporal resolution)
+    spin: ``spin`` object
+        The spin system to precess.
+
+    Attributes
+    ----------
+
+    ETC: misc
+        All relevant parameters are imported from the ``spin`` object.
+
+    Notes
+    -----
+    The ``trajectory`` will simulate t/dt time steps, separated by dt.
+    '''
     def __init__(self,t,dt,spin):
         self.traj=np.zeros((spin.n,3,int(t//dt)))
         self.traj[:,2,0]=np.ones((spin.n))
