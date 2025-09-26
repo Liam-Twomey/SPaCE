@@ -9,6 +9,7 @@ bandwidth, centered at 0 GHz. Increasing the number of spins will make it
 less 'noisy', but each step will take longer to calculate.
 
 .. code:: python
+
     system=sp.spin(50000,method='Uniform',width=1) 
 
 Next, we define the domain of the simulation. Below, we define a experiment
@@ -16,6 +17,7 @@ which is 1000 ns long, and we calculate the state of the spin system ``system``
 every 2 ns, giving us 500 timepoints.
 
 .. code:: python
+
     exp=sp.trajectory(1000,2,system)
 
 Then, we define our pulse sequence. We first make a pulse object called ``p90``,
@@ -23,6 +25,7 @@ which we then set to be a 30 ns rectangular pulse with a pulse angle of $\pi/2$.
 We then generate a 60 ns rectangular $\pi$ pulse.
 
 .. code:: python
+
     p90=sp.pulse()
     p90.rect(np.pi/2,30)
     p180=sp.pulse()
@@ -30,15 +33,17 @@ We then generate a 60 ns rectangular $\pi$ pulse.
 
 We now have an experiment which incorporates the spin system, and several pulses.
 We need to apply these pulses to the experiment.
-- From t=0 to t=30 ns, we apply a $\pi/2$ pulse on +x at time 0.
-- From t=30 to t=300 ns, we allow the system to precess for 300 ns.
-- From t=330 to t=390 ns, we apply the $pi$ pulse along +x
-- From t=390 to t=1000 ns, we allow the system to precess again.
-- Finally, we calculate the signal (echo) intensity based on the transition,
+
+* From t=1 to t=30 ns, we apply a $\pi/2$ pulse on +x at time 0.
+* From t=30 to t=300 ns, we allow the system to precess for 300 ns.
+* From t=330 to t=390 ns, we apply the $pi$ pulse along +x
+* From t=390 to t=1000 ns, we allow the system to precess again.
+* Finally, we calculate the signal (echo) intensity based on the transition,
   and net magnetization for the experiment. There is only one transition for
   $S=1/2$ systems, but we still need to calculate the intensity of it.
 
 .. code:: python 
+
     trj.flip(p90,0,'+x')
     trj.precess(30,330)
     trj.flip(p180,330,'+x')
@@ -53,6 +58,7 @@ Now, we can plot the results of our experiment, in terms of the net
 magnetization of the spins along the X and Y axes:
 
 .. code:: python
+
     plt.plot(trj.time,trj.M[0],label='Real (X magnitude)')
     plt.plot(trj.time,trj.M[1],label='Imag (Y magnitude)')
     plt.legend()
@@ -65,9 +71,9 @@ We can display the pulse sequence on the same axis, by redefining the pulses
 in the trajectory as a pulse sequence, and setting display parameters.
 
 .. code:: python
+
     trj.p_seq([p90,p180],[0,330],['+x','+x'],norm_y=3000000,norm_x=1)
     trj.seq[:,0]=np.array([0,0,0])
-
     plt.plot(trj.time,trj.seq[0],label='Pulse sequence')
     plt.plot(trj.time,trj.seq[1],label='Y magnetization')
     plt.legend()
@@ -84,6 +90,7 @@ each displayed for 200 ms. See documentation for the ``display_bloch``
 function for more info.
 
 .. code:: python
+
     trj.display_bloch(0,32,0,'test_central_spin.gif',interval=200)
 
 .. image:: _static/test_central_spin.gif
@@ -92,16 +99,18 @@ You can also select a set of spins to display on the bloch sphere. This will
 select the spins closest to 0, 0.005, and 0.01 GHz.
 
 .. code:: python
+
     trj.display_bloch(0,32,[0,0.005,0.01],'test_mult_spins.gif',interval=200)
 
 
-.. image:: _static/test_multiple_spins.gif
+.. image:: _static/test_mult_spins.gif
 
 We can also select a single spin, and plot it. We first extract the trajectory
 of the spin closest to $\nu=0$, then plot all three of its dimensions along
 the XY plane.
 
 .. code:: python
+
     central_traj=trj.get_traj(0)
     plt.plot(trj.time,central_traj[0],label='X')
     plt.plot(trj.time,central_traj[1],label='Y')
@@ -119,6 +128,7 @@ pulling the data points in order of frequency. We can see that by 32 ns, the
 spins at $\nu=0$ are flipped away from Z.
 
 .. code:: python
+
     order=np.argsort(trj.nu)#Sort the spins based off of frequency
     plt.plot(trj.nu[order],trj.traj[order,2,16], label='M[Z], 32 ns')
     plt.plot(trj.nu[order],trj.traj[order,2,0], label='M[Z], 0 ns')
@@ -132,6 +142,7 @@ To investigate a specific frequency of spin more quickly, we can use a sparse
 set of spins (here, 2) and manually set their frequencies:
 
 .. code:: python
+
     test2=sp.spin(2)
     test2.nu=np.array([0,0.05])
 
@@ -146,6 +157,7 @@ the ``histogram`` argument, to approximate the curve as a collection of bins
 of spins.
 
 .. code:: python
+
     #load a spectrum in field vs. intensity
     dist=np.load('Sim_NO.npy')
     #super rough calculation of converting field to frequency
@@ -166,6 +178,7 @@ We can implement a three-pulse ESEEM (no phase cycling) can be
 implement as shown below.
 
 .. code:: python
+
     test4=sp.spin(50000)
     trj_eseem=sp.trajectory(1500,2,test4)
 
@@ -193,6 +206,7 @@ be implemented via a for loop, as shown below for a 2-mode
 cycle for pulse 3:
 
 .. code:: python
+
     # 2-step phase cycle
     p3_phases=['+x','-x'] #list of phases of pulse 3
     sum_coeff=[1,-1]
