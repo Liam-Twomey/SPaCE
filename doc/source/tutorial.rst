@@ -21,26 +21,24 @@ every 2 ns, giving us 500 timepoints.
     exp=sp.trajectory(1000,2,system)
 
 Then, we define our pulse sequence. We first make a pulse object called ``p90``,
-which we then set to be a 30 ns rectangular pulse with a pulse angle of $\pi/2$.
-We then generate a 60 ns rectangular $\pi$ pulse.
+which we define as a 30 ns rectangular pulse with a pulse angle of :math:`\pi/2`.
+We then generate a 60 ns rectangular :math:`\pi` pulse.
 
 .. code:: python
 
-    p90=sp.pulse()
-    p90.rect(np.pi/2,30)
-    p180=sp.pulse()
-    p180.rect(np.pi,60)
+    p90=sp.pulse(np.pi/2,30,'rect')
+    p180=sp.pulse(np.pi,60,'rect')
 
 We now have an experiment which incorporates the spin system, and several pulses.
 We need to apply these pulses to the experiment.
 
-* From t=1 to t=30 ns, we apply a $\pi/2$ pulse on +x at time 0.
+* From t=1 to t=30 ns, we apply a :math:`\pi/2` pulse on +x at time 0.
 * From t=30 to t=300 ns, we allow the system to precess for 300 ns.
 * From t=330 to t=390 ns, we apply the $pi$ pulse along +x
 * From t=390 to t=1000 ns, we allow the system to precess again.
 * Finally, we calculate the signal (echo) intensity based on the transition,
   and net magnetization for the experiment. There is only one transition for
-  $S=1/2$ systems, but we still need to calculate the intensity of it.
+  :math:`S=1/2` systems, but we still need to calculate the intensity of it.
 
 .. code:: python 
 
@@ -199,7 +197,7 @@ implement as shown below.
 
 .. image:: _static/3pESEEMnoPS.png
 
-Note that except for the  2p-hahn-echo, ENDOR, and EDNMR,
+Note that except for the 2-pulse hahn echo, ENDOR, and EDNMR,
 phase cycling is almost a requirement to identify which echo
 is the correct one, unless you already know. Phase cycling can
 be implemented via a for loop, as shown below for a 2-mode

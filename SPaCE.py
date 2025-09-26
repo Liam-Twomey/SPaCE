@@ -28,9 +28,9 @@ class spin:
             (endor only) value of the hyperfine coupling between the electron
             and the nucleus.
         nuc: 
-	        (endor only) number of nuclei coupled to the electron spin
+            (endor only) number of nuclei coupled to the electron spin
         dipolar: int
-	        (endor only) the dipolar coupling between spins in the system (must be even)
+            (endor only) the dipolar coupling between spins in the system (must be even)
         S: float
             (endor only) The electronic spin of the system.
         ms: str
@@ -134,7 +134,7 @@ class inversion:
     for a given pulse.
 
     Parameters
-	----------
+    ----------
     pulse: ``pulse`` object
         A RF pulse.
 
@@ -278,8 +278,8 @@ class trajectory:
             # self.dipolar[altered_spins.astype(int)]=-1*self.dipolar[altered_spins.astype(int)]
             # self.nu[altered_spins.astype(int)]=self.nu[altered_spins.astype(int)]+self.dipolar[altered_spins.astype(int)]
 
-        
-        if pulse.type=='WURST':
+
+        if pulse.type=='wurst':
             pos=np.argmin(abs(self.time-t))
             final_pos=np.argmin(abs(self.time-(t+pulse.tp)))
             p_traj=np.zeros((self.n,3,int(pulse.tp/pulse.resolution+1)))
@@ -488,12 +488,35 @@ class pulse:
     None
 
     '''
-    def __init__(self):
-        pass
+    def __init__(self, alpha, tp, type='rect', f0=None, f1=None, n_wurst=None,
+                 resolution=0.1,freq=None,amp=None,B1=None):
+        self.type=type.lower()
+        match self.type:
+            case 'rect':
+                assert((alpha and tp) is not  None)
+                self.rect(alpha, tp)
+            case 'wurst':
+                assert((alpha and tp and f0 and f1 and n_wurst and resolution) is not  None)
+                self.wurst(alpha,tp,f0,f1,n_wurst,resolution)
+            case 'custom':
+                assert((tp and freq and amp and B1 and resolution) is not None)
+                self.custom(tp,freq,amp,B1,resolution)
+            case _:
+                return "Undefined type. Options are 'rect', 'wurst', or 'custom'."
+
+    def __str__(self):
+        match self.type:
+            case 'rect': 
+                return f"{self.tp} ns {self.type} pulse, with flip angle of {self.alpha/np.pi}*pi rad."
+            case 'wurst': 
+                return f"{self.tp} ns {self.type} pulse, with flip angle of {self.alpha/np.pi}*pi rad.\n \
+                Pulse starts at {self.f0} GHz and ends at {self.f1} GHz, with a resolution of {self.resolution} GHz."
+            case 'custom': 
+                return f"{self.tp} ns pulse at {self.freq} GHz, with an amplitude of {self.amp}, with a B1 of {self.B1}." 
 
     def rect(self,alpha,tp):
         '''
-        Generates a rectangular pulse of time tp and angle alpha.
+        Generates a rectangular pulse of time tp and angle alpha. Used only by the class constructor.
 
         Parameters
         ----------
@@ -504,6 +527,7 @@ class pulse:
         '''
         # self.step=step
         self.tp=tp
+        self.alpha = alpha
         ge=2.0023
         be=9.27*10**-24 ##J/T
         h=6.626*10**-34/(2*np.pi) ##J/Hz/rad
@@ -511,11 +535,11 @@ class pulse:
         # self.time=np.arange(0,time,step=step)
         # self.amp=np.zeros_like(self.time)
         # self.amp[np.argmin(abs(self.time-t0)):np.argmin(abs(self.time-(t0+tp)))]=np.ones_like(self.amp[np.argmin(abs(self.time-t0)):np.argmin(abs(self.time-(t0+tp)))])*amp
-        self.type='rect'
+        #self.type='rect'
     
-    def CHIRP(self,tp,f0,f1,alpha,n_wurst,resolution=0.1):
+    def wurst(self,alpha,tp,f0,f1,n_wurst,resolution=0.1):
         '''
-        Generates a chirp pulse of time tp and angle alpha. ?? WURST != CHIRP?
+        Generates a WURST pulse of time tp and angle alpha, starting at f0 GHz and ending at f1 GHz. Used only by the class constructor.
 
         Parameters
         ----------
@@ -536,6 +560,7 @@ class pulse:
         self.f0=f0
         self.f1=f1
         self.tp=tp
+        self.alpha=alpha
         self.BW=np.abs(f1-f0)
         k=self.BW*10**9*2*np.pi/tp/10**-9 ## Hz**2
         ge=2.0023
@@ -548,11 +573,11 @@ class pulse:
         self.B1=np.sqrt(Q_crit*k)*h/ge/be
         self.n=n_wurst
         self.resolution=resolution
-        self.type='WURST'
+        #self.type='WURST'
 
     def custom(self,tp,freq,amp,B1,resolution=0.1):
         '''
-        Method to define a custom pulse
+        Method to define a custom pulse. Used only by the class constructor.
 
         Parameters
         ----------
@@ -572,4 +597,3 @@ class pulse:
         self.amp=amp
         self.B1=B1
         self.resolution=resolution
-        self.type='custom'
