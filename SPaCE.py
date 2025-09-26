@@ -367,7 +367,19 @@ class trajectory:
 
         Parameters
         ----------
-        ??
+        x: list
+            list of ``pulse`` objects to add to the sequence
+        t0: list of float
+            list of starting timepoints for the pulses in ``x``
+        direction: list of str
+            list of directions along which to apply the pulses in ``x``, i.e.
+            +x, -y, etc
+        norm_y: float
+            Factor by which to multiply the pulse intensity, to show it
+            appropriately on the plot alongside magnetization.
+        norm_x: float
+            Factor by which to multiply the time axis of the pulse intensity,
+            to show it appropriately on the plot overlaid with magnetization.
         '''
         self.seq=np.copy(self.M)
         for i,j in enumerate(x):
@@ -474,19 +486,6 @@ class pulse:
     Parameters
     ----------
     None
-    
-    Attributes
-    ----------
-    tp
-
-    Methods
-    -------
-    rect
-        Generate a rectangular pulse
-    CHIRP
-        Generate a CHIRP or WURST pulse
-    custom
-        Define a custom pulse type
 
     '''
     def __init__(self):
