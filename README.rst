@@ -12,6 +12,7 @@ The program can plot pulse sequences, net magnetization over time, and gifs of
 the Block diagram of a spin/collection of spins over time!
 
 .. image:: doc/source/_static/test_mult_spins.gif
+   :scale: 50 %
 
 Documentation
 -------------
