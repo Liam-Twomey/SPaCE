@@ -362,6 +362,11 @@ class trajectory:
 
     def p_seq(self,x,t0,direction=None,norm_y=1,norm_x=1):
         '''
+        Defines a pulse sequence in such a way it can be displayed easily,
+        overlaid with the system's magnetization.
+
+        Parameters
+        ----------
         ??
         '''
         self.seq=np.copy(self.M)
@@ -510,7 +515,7 @@ class pulse:
         self.type='rect'
     
     def CHIRP(self,tp,f0,f1,alpha,n_wurst,resolution=0.1):
-                '''
+        '''
         Generates a chirp pulse of time tp and angle alpha. ?? WURST != CHIRP?
 
         Parameters
@@ -528,6 +533,7 @@ class pulse:
         resolution:
             Frequency step??
         '''
+
         self.f0=f0
         self.f1=f1
         self.tp=tp
