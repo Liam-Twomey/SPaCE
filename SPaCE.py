@@ -2,9 +2,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import matplotlib.animation as animation
+from matplotlib import colormaps
 from scipy.spatial.transform import Rotation as R
 from scipy.fft import fft,fftfreq,fftshift
 import scipy.stats
+# for bloch arrow mode
+from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import proj3d
+
+class Arrow3D(FancyArrowPatch):
+    '''
+    Defines an arrow patch for 3D matplotlib plots, for use in the 
+    'arrow' mode for display_bloch
+    '''
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        super().__init__((0,0), (0,0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+
+    def do_3d_projection(self, renderer=None):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+        return np.min(zs)
 
 class spin:
     def __init__(self,n:int,method:str='Uniform',width:float=1,dist_file:str=None,
@@ -423,13 +442,16 @@ class trajectory:
             Length which each frame is displayed (ms)
 		mode: str
 			Way that the spins are displayed. 'trace' shows their movement on the sphere,
-			'arrow' shows the spins as arrows from the orgin to the trace. (WIP)
+			'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
         '''
 
         fig = plt.figure()
         ax = plt.axes(projection='3d')
+        #Check that mode has a usable value
+        modevals = ['trace','arrow', 'both']
+        assert(mode in modevals)
 
 		# Check if nu is a list of frequencies and find s, the frequencies of the trajectory
 		# closest to the supplied values.
@@ -437,7 +459,7 @@ class trajectory:
         if hasattr(nu,'__iter__'):
             s=[np.argmin(abs(self.nu-i)) for i in nu]
         else:
-            s=np.argmin(abs(self.nu-nu))
+            s=[np.argmin(abs(self.nu-nu))]
 
         # Make sphere
         u = np.linspace(0, 2 * np.pi, 100)
@@ -450,38 +472,31 @@ class trajectory:
         n=int((t1-t0)/self.dt)
         ims = ['']*n
         start_pos=np.argmin(abs(self.time-t0))
+        # set arrow properties for the arrow display mode
+        arrow_props = dict(mutation_scale=20, arrowstyle='-|>', shrinkA=0, shrinkB=0)
+        # select s colors from 
+        acolors = colormaps['rainbow'](np.linspace(0,1,len(s)))
 		# for each timepoint, iterate through the selected frequencies, and add a point to the spin's
 		# trajectory for its' position at this timepoint.
         for i in range(n):
-            if hasattr(s,'__iter__'):
-                for j,k in enumerate(s):
-                    xline=self.traj[k,0,start_pos:i+start_pos+1]
-                    yline=self.traj[k,1,start_pos:i+start_pos+1]
-                    zline=self.traj[k,2,start_pos:i+start_pos+1]
-                    if j==0:
-                        artist=ax.plot3D(xline, yline, zline, 'gray')
-                    else:
-                        artist.append(ax.plot3D(xline, yline, zline, 'gray')[0])
-                artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
-                t=np.linspace(0,50,51)
-                xline=np.sin(t*np.pi*2/50)
-                yline=np.cos(t*np.pi*2/50)
-                zline=np.zeros_like(t)
-                artist.append(ax.plot3D(xline, yline, zline, 'blue')[0])
-                ims[i]=artist
-            else:
-                xline=self.traj[s,0,start_pos:i+start_pos+1]
-                yline=self.traj[s,1,start_pos:i+start_pos+1]
-                zline=self.traj[s,2,start_pos:i+start_pos+1]
-                artist=ax.plot3D(xline, yline, zline, 'gray')
-                artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
-                t=np.linspace(0,50,51)
-                xline=np.sin(t*np.pi*2/50)
-                yline=np.cos(t*np.pi*2/50)
-                zline=np.zeros_like(t)
-                artist.append(ax.plot3D(xline, yline, zline, 'blue')[0])
-                ims[i]=artist
-        # self.ims=ims
+            artist = []
+            for j,k in enumerate(s):
+                # find the position of each spin j at point k
+                xline=self.traj[k,0,start_pos:i+start_pos+1]
+                yline=self.traj[k,1,start_pos:i+start_pos+1]
+                zline=self.traj[k,2,start_pos:i+start_pos+1]
+                if mode==('trace' or 'both'):
+                    artist.append(ax.plot3D(xline, yline, zline, 'gray')[0])
+                if mode==('arrow' or 'both'):
+                    artist.append(ax.add_artist(Arrow3D([0,xline[-1]],[0,yline[-1]],[0,zline[-1]], color=acolors[j], **arrow_props)))
+            artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
+            t=np.linspace(0,50,51)
+            xhem=np.sin(t*np.pi*2/50)
+            yhem=np.cos(t*np.pi*2/50)
+            zhem=np.zeros_like(t)
+            artist.append(ax.plot3D(xhem, yhem, zhem, 'blue')[0])
+            ims[i]=artist
+        self.ims=ims
         ani = animation.ArtistAnimation(fig=fig, artists=ims, interval=interval)
         ani.save(filename=filename,writer=writer)
 
