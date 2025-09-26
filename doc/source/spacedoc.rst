@@ -12,10 +12,3 @@ SPaCE consists of three classes:
 
 .. automodule:: SPaCE
    :members:
-
-.. .. currentmodule:: SPaCE
-.. .. autoclass:: spin
-.. .. autoClass:: pulse 
-.. .. autoClass:: trajectory 
-.. .. autoClass:: inversion 
-
