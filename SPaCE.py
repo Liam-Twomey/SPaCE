@@ -450,7 +450,7 @@ class trajectory:
         fig = plt.figure()
         ax = plt.axes(projection='3d')
         #Check that mode has a usable value
-        modevals = ['trace','arrow', 'both']
+        modevals = ['trace','arrow']#, 'both']
         assert(mode in modevals)
 
 		# Check if nu is a list of frequencies and find s, the frequencies of the trajectory
@@ -485,9 +485,9 @@ class trajectory:
                 xline=self.traj[k,0,start_pos:i+start_pos+1]
                 yline=self.traj[k,1,start_pos:i+start_pos+1]
                 zline=self.traj[k,2,start_pos:i+start_pos+1]
-                if mode==('trace' or 'both'):
+                if mode==('trace'):# or 'both'):
                     artist.append(ax.plot3D(xline, yline, zline, 'gray')[0])
-                if mode==('arrow' or 'both'):
+                if mode==('arrow'):# or 'both'):
                     artist.append(ax.add_artist(Arrow3D([0,xline[-1]],[0,yline[-1]],[0,zline[-1]], color=acolors[j], **arrow_props)))
             artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
             t=np.linspace(0,50,51)
