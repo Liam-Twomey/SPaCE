@@ -405,7 +405,7 @@ class trajectory:
         index=np.argmin(abs(self.nu-nu))
         return self.traj[index]
     
-    def display_bloch(self,t0,t1,nu,filename,interval=400,writer='pillow'):
+    def display_bloch(self,t0,t1,nu,filename,interval=400,mode='trace',writer='pillow'):
         '''
         Write out a gif of the bloch sphere representation of the trajectory.
 
@@ -421,12 +421,18 @@ class trajectory:
             Name of gif file to output
         interval: int
             Length which each frame is displayed (ms)
+		mode: str
+			Way that the spins are displayed. 'trace' shows their movement on the sphere,
+			'arrow' shows the spins as arrows from the orgin to the trace. (WIP)
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
         '''
 
         fig = plt.figure()
         ax = plt.axes(projection='3d')
+
+		# Check if nu is a list of frequencies and find s, the frequencies of the trajectory
+		# closest to the supplied values.
 
         if hasattr(nu,'__iter__'):
             s=[np.argmin(abs(self.nu-i)) for i in nu]
@@ -439,22 +445,22 @@ class trajectory:
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-
+		
+		# set time range and select timepoints from data
         n=int((t1-t0)/self.dt)
         ims = ['']*n
         start_pos=np.argmin(abs(self.time-t0))
+		# for each timepoint, iterate through the selected frequencies, and add a point to the spin's
+		# trajectory for its' position at this timepoint.
         for i in range(n):
             if hasattr(s,'__iter__'):
                 for j,k in enumerate(s):
+                    xline=self.traj[k,0,start_pos:i+start_pos+1]
+                    yline=self.traj[k,1,start_pos:i+start_pos+1]
+                    zline=self.traj[k,2,start_pos:i+start_pos+1]
                     if j==0:
-                        xline=self.traj[k,0,start_pos:i+start_pos+1]
-                        yline=self.traj[k,1,start_pos:i+start_pos+1]
-                        zline=self.traj[k,2,start_pos:i+start_pos+1]
                         artist=ax.plot3D(xline, yline, zline, 'gray')
                     else:
-                        xline=self.traj[k,0,start_pos:i+start_pos+1]
-                        yline=self.traj[k,1,start_pos:i+start_pos+1]
-                        zline=self.traj[k,2,start_pos:i+start_pos+1]
                         artist.append(ax.plot3D(xline, yline, zline, 'gray')[0])
                 artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
                 t=np.linspace(0,50,51)
