@@ -425,7 +425,8 @@ class trajectory:
         index=np.argmin(abs(self.nu-nu))
         return self.traj[index]
     
-    def display_bloch(self,t0,t1,nu,filename,interval=400,mode='trace',writer='pillow'):
+    def display_bloch(self,t0:float,t1:float,nu:float,filename:str,interval:int=400,mode:str='trace',
+                    writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
         '''
         Write out a gif of the bloch sphere representation of the trajectory.
 
@@ -441,21 +442,35 @@ class trajectory:
             Name of gif file to output
         interval: int
             Length which each frame is displayed (ms)
-		mode: str
-			Way that the spins are displayed. 'trace' shows their movement on the sphere,
-			'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
+        mode: str
+            Way that the spins are displayed. 'trace' shows their movement on the sphere,
+            'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
+        size: list of float
+            Size (in inches) of the figure. Defaults to [5,5]
+        dpi: float
+            Figure resolution, in dots per inch. Defaults to 150.
+
+        Notes
+        -----
+        * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
+          set on creation of the trajectory object. It cannot be updated when displaying
+          the bloch sphere.
         '''
 
-        fig = plt.figure()
+        fig = plt.figure(figsize=size,dpi=dpi)
         ax = plt.axes(projection='3d')
+        #ax.set_axis_off()
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
         #Check that mode has a usable value
         modevals = ['trace','arrow']#, 'both']
         assert(mode in modevals)
 
-		# Check if nu is a list of frequencies and find s, the frequencies of the trajectory
-		# closest to the supplied values.
+        # Check if nu is a list of frequencies and find s, the frequencies of the trajectory
+        # closest to the supplied values.
 
         if hasattr(nu,'__iter__'):
             s=[np.argmin(abs(self.nu-i)) for i in nu]
@@ -468,8 +483,8 @@ class trajectory:
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-		
-		# set time range and select timepoints from data
+        
+        # set time range and select timepoints from data
         n=int((t1-t0)/self.dt)
         ims = ['']*n
         start_pos=np.argmin(abs(self.time-t0))
@@ -477,8 +492,8 @@ class trajectory:
         arrow_props = dict(mutation_scale=20, arrowstyle='-|>', shrinkA=0, shrinkB=0)
         # select s colors from 
         acolors = colormaps['rainbow'](np.linspace(0,1,len(s)))
-		# for each timepoint, iterate through the selected frequencies, and add a point to the spin's
-		# trajectory for its' position at this timepoint.
+        # for each timepoint, iterate through the selected frequencies, and add a point to the spin's
+        # trajectory for its' position at this timepoint.
         for i in range(n):
             artist = []
             for j,k in enumerate(s):
