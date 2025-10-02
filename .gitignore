@@ -3,9 +3,7 @@ __pycache__/
 *.py[cod]
 
 # demo output
-test_central_spin.gif
-test_mult_spins.gif
-
+./*.gif
 # vim swap files
 *.sw?
 *.swp
