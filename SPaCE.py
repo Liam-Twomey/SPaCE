@@ -184,6 +184,9 @@ class trajectory:
     Attributes
     ----------
     
+    traj: np.array
+        A 3D array representing the trajectory. Dimensionality: [timepoint, ]
+
     ETC: misc
         All relevant parameters are imported from the ``spin`` object.
 
@@ -324,7 +327,7 @@ class trajectory:
             index=[np.argmin(np.abs(p_time-x))+1 for x in np.arange(t,t+pulse.tp,self.dt)]
             self.traj[:,:,pos+1:final_pos+1]=p_traj[:,:,index]
             self.tipped_angle=np.arccos(self.traj[:,2,final_pos])
-            self.nu=self.nu+np.multiply(self.dipolar,np.cos(self.tipped_angle))
+            self.nu=self.nu+np.multiply(self.dipolar,np.cos(self.verytipped_angle))
 
         if pulse.type=='custom':
             pos=np.argmin(abs(self.time-t))
@@ -426,7 +429,7 @@ class trajectory:
         return self.traj[index]
     
     def display_bloch(self,t0:float,t1:float,nu:float,filename:str,interval:int=400,mode:str='trace',
-                    writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
+                      plotlib:str='mpl',writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
         '''
         Write out a gif of the bloch sphere representation of the trajectory.
 
@@ -445,6 +448,8 @@ class trajectory:
         mode: str
             Way that the spins are displayed. 'trace' shows their movement on the sphere,
             'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
+        plotlib: str
+            Options are 'mpl'/'matplotlib' to use matplotlib, or 'ply'/'plotly' to use plotly.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
         size: list of float
@@ -457,6 +462,21 @@ class trajectory:
         * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
           set on creation of the trajectory object. It cannot be updated when displaying
           the bloch sphere.
+        '''
+        match plotlib.lower():
+            case ('mpl'|'matplotlib'):
+                _bloch_matplotlib(self,t0=t0,t1=t1,nu=nu,filename=filename,interval=interval,
+                                mode=mode, writer=writer,size=size, dpi=dpi)
+            case ('ply'|'plotly'):
+                # _bloch_plotly()
+                pass
+            case _: 
+                raise NotImplementedError (f'{plotlib} is not a valid value for the plotting library. Available options are matplotlib, mpl, plotly or ply.')
+        
+    def _bloch_matplotlib(self,t0:float,t1:float,nu:float,filename:str,interval:int=400,mode:str='trace',
+                        writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
+        '''
+        This is an internal method used by ``display_bloch`` to plot the bloch sphere using matplotlib.
         '''
 
         fig = plt.figure(figsize=size,dpi=dpi)
@@ -515,6 +535,10 @@ class trajectory:
         self.ims=ims
         ani = animation.ArtistAnimation(fig=fig, artists=ims, interval=interval)
         ani.save(filename=filename,writer=writer)
+
+    def _bloch_plotly((self,t0:float,t1:float,nu:float,filename:str,interval:int=400,mode:str='trace',
+                        size:list=[6.4,4.8],dpi:float=150):
+        px.
 
 class pulse:
     '''
