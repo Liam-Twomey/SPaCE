@@ -1,3 +1,4 @@
 .. toctree::
         tutorial
         spacedoc
+        metadoc
