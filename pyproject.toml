@@ -1,0 +1,50 @@
+[project]
+name = "SPaCE"
+dynamic = ["version"]
+#version = '0.1.3'
+description = ""
+authors = [
+	{name = "Zikri Hasanbasri"},
+	{name = "Liam Twomey"},
+]
+readme = "README.rst"
+requires-python = ">=3.10"
+keywords = ["electron","paramagnetic","magnetic","resonance"]
+#license = "GPL-3.0-or-later"
+#license-files = ["LICENSE.txt"]
+classifiers = [
+	"Private :: Do Not Upload",
+	"Devlopment Status :: 4 - Beta",
+	"Intended Audience :: Scientists",
+	"Programming Language :: Python :: 3",
+]
+dependencies = [
+	'numpy',
+	'scipy',
+	'matplotlib',
+	'plotly',
+	'pandas',
+]
+
+[project.optional-dependencies]
+doc=[
+	'sphinx', # documentation system
+	'pydata_sphinx_theme', # documentation theme
+	'sphinx_copybutton',# enables auto copying of snippets
+	'sphinx_design' # allows use of grid, button elements in docs
+]
+
+[project.urls]
+Repository = "https://github.com/zhasanbasri-hash/SPaCE"
+Issues = "https://github.com/zhasanbasri-hash/SPaCE/issues"
+Homepage = "https://github.com/zhasanbasri-hash/SPaCE"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+SPaCE = "src"
+
+[tool.setuptools.dynamic]
+version = {attr = "SPaCE.__version__"}

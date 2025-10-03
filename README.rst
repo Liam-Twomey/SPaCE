@@ -16,6 +16,26 @@ the Block diagram of a spin/collection of spins over time!
 .. image:: doc/source/_static/test_mult_spins.gif
    :scale: 50 %
 
+Installation
+------------
+
+To install, first clone the git repo, then from the program folder, build and install the package.
+
+.. code:: bash
+
+    git clone https://github.com/zhasanbasri-hash/SPaCE.git
+    cd SPaCE
+    pip3 install build
+    python -m build .
+    pip3 install .
+    # or, to install with the ability to edit the package and build documentation:
+    pip3 install -e '.[doc]'
+
+The package will now be installed in your current python environment or virtual
+environment, and can be imported from any directory, the same as any other
+package installed by ``pip``.
+
+
 Documentation
 -------------
 
@@ -23,8 +43,7 @@ The documentation is built using Sphinx. To build the documentation:
 
 .. code:: bash
 
-    git clone https://github.com/zhasanbasri-hash/SPaCE.git
-    cd SPaCE/doc
+    cd doc
     # intialize a venv if you want to use one
     pip install sphinx sphinx-copybutton sphinx_design pydata_sphinx_theme
     sphinx-build -b html ./source ./build
