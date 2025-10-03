@@ -103,9 +103,19 @@ select the spins closest to 0, 0.005, and 0.01 GHz.
 
 .. image:: _static/test_mult_spins.gif
 
-For an interactive plot, `plotlib` can be set to `pl` or `plotly`. The plot will
-now be show in an HTML canvas within the notebook. Pressing the play button will
-animate it. There is unfortunately no animation exporting built into Plotly.
+For an interactive plot, `plotlib` can be set to `pl` or `plotly`. In
+order to use it in a notebook, the following lines should be included in the
+import block:
+
+.. code:: python
+
+    import plotly
+    pl.offline.init_notebook_mode()
+
+Then, the bloch sphere can be displayed in plotly with the following line.
+The plot is displayed in an HTML canvas within the notebook. Pressing the
+play button will animate it. There is unfortunately no animation exporting
+built into Plotly, so that is not implemented.
 
 .. code:: python
 

@@ -19,11 +19,13 @@ classifiers = [
 	"Programming Language :: Python :: 3",
 ]
 dependencies = [
+	'ipykernel',
 	'numpy',
 	'scipy',
 	'matplotlib',
 	'plotly',
 	'pandas',
+	'nbformat',
 ]
 
 [project.optional-dependencies]
