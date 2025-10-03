@@ -10,11 +10,18 @@ import scipy.stats
 # for bloch arrow mode
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
+# for plotly
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import plotly as pl
+pl.offline.init_notebook_mode()
 
-class Arrow3D(FancyArrowPatch):
+
+class _Arrow3D(FancyArrowPatch):
     '''
     Defines an arrow patch for 3D matplotlib plots, for use in the 
-    'arrow' mode for display_bloch
+    'arrow' mode for display_bloch.
     '''
     def __init__(self, xs, ys, zs, *args, **kwargs):
         super().__init__((0,0), (0,0), *args, **kwargs)
@@ -184,6 +191,11 @@ class trajectory:
     Attributes
     ----------
     
+    traj: np.array
+        A 3D array representing the trajectory. Dimensionality: [spin, dimension,
+        timepoint]. spin is the index of a spin, the dimension is 1=x,2=y,3=z,
+        and the timepoint is the index of the point in time for the spin.
+
     ETC: misc
         All relevant parameters are imported from the ``spin`` object.
 
@@ -324,7 +336,7 @@ class trajectory:
             index=[np.argmin(np.abs(p_time-x))+1 for x in np.arange(t,t+pulse.tp,self.dt)]
             self.traj[:,:,pos+1:final_pos+1]=p_traj[:,:,index]
             self.tipped_angle=np.arccos(self.traj[:,2,final_pos])
-            self.nu=self.nu+np.multiply(self.dipolar,np.cos(self.tipped_angle))
+            self.nu=self.nu+np.multiply(self.dipolar,np.cos(self.verytipped_angle))
 
         if pulse.type=='custom':
             pos=np.argmin(abs(self.time-t))
@@ -425,7 +437,8 @@ class trajectory:
         index=np.argmin(abs(self.nu-nu))
         return self.traj[index]
     
-    def display_bloch(self,t0,t1,nu,filename,interval=400,mode='trace',writer='pillow'):
+    def display_bloch(self,t0:float,t1:float,nu:float,filename:str='',interval:int=400,mode:str='trace',
+                      plotlib:str='mpl',writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
         '''
         Write out a gif of the bloch sphere representation of the trajectory.
 
@@ -441,47 +454,87 @@ class trajectory:
             Name of gif file to output
         interval: int
             Length which each frame is displayed (ms)
-		mode: str
-			Way that the spins are displayed. 'trace' shows their movement on the sphere,
-			'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
+        mode: str
+            Way that the spins are displayed. 'trace' shows their movement on the sphere,
+            'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
+			Currently only used when ``plotlib==matplotlib``.
+        plotlib: str
+            Options are 'mpl'/'matplotlib' to use matplotlib, or 'pl'/'plotly' to use plotly.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
+			Only used when ``plotlib == mpl``.
+        size: list of float
+            Size (in inches) of the figure. Defaults to [5,5]
+        dpi: float
+            Figure resolution, in dots per inch. Defaults to 150. Only used when ``plotlib
+			== mpl``.
+
+        Notes
+        -----
+        * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
+          set on creation of the trajectory object. It cannot be updated when displaying
+          the bloch sphere.
+		* This calls two different private functions, depending on the plotlib:
+		  ``_bloch_plotly()``, or ``_bloch_matplotlib()``.
         '''
-
-        fig = plt.figure()
-        ax = plt.axes(projection='3d')
-        #Check that mode has a usable value
-        modevals = ['trace','arrow']#, 'both']
-        assert(mode in modevals)
-
-		# Check if nu is a list of frequencies and find s, the frequencies of the trajectory
-		# closest to the supplied values.
-
+        # Check if nu is a list of frequencies and find s, the frequencies of the trajectory
+        # closest to the supplied values.
         if hasattr(nu,'__iter__'):
             s=[np.argmin(abs(self.nu-i)) for i in nu]
         else:
             s=[np.argmin(abs(self.nu-nu))]
 
+        # set time range and select timepoints from data
+        n=int((t1-t0)/self.dt)
+        start_pos=np.argmin(abs(self.time-t0))
+        # we now have s, a timepoint array of length n beginning at start_pos
+
+        match plotlib.lower():
+            case ('mpl'|'matplotlib'):
+                # self._bloch_matplotlib(t0=t0,t1=t1,nu=nu,filename=filename,interval=interval,
+                #                 mode=mode, writer=writer,size=size, dpi=dpi)
+                if filename == '':
+                    raise ValueError('For matplotlib output, a `filename` for the gif must be supplied to `display_bloch`.')
+                self._bloch_matplotlib(s,n,start_pos, size, dpi, mode, interval, filename, writer)
+            case ('pl'|'plotly'):
+                self._bloch_plotly(s,n,start_pos,size,mode,interval)
+            case _: 
+                raise NotImplementedError (f'{plotlib} is not a valid value for the plotting library. Available options are matplotlib, mpl, plotly or ply.')
+        
+    # def _bloch_matplotlib(self,t0:float,t1:float,nu:float,filename:str,interval:int=400,mode:str='trace',
+    #                     writer:str='pillow',size:list=[6.4,4.8],dpi:float=150):
+    def _bloch_matplotlib(self,s,n,start_pos, size, dpi, mode, interval, filename, writer):
+        '''
+        An internal method used by ``display_bloch`` to plot the bloch sphere using matplotlib.
+        '''
+
+        fig = plt.figure(figsize=size,dpi=dpi)
+        ax = plt.axes(projection='3d')
+        #ax.set_axis_off()
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_zticklabels([])
+        #Check that mode has a usable value
+        modevals = ['trace','arrow']#, 'both']
+        assert(mode in modevals)
+        
         # Make sphere
         u = np.linspace(0, 2 * np.pi, 100)
         v = np.linspace(0, np.pi, 100)
         x = np.outer(np.cos(u), np.sin(v))
         y = np.outer(np.sin(u), np.sin(v))
         z = np.outer(np.ones(np.size(u)), np.cos(v))
-		
-		# set time range and select timepoints from data
-        n=int((t1-t0)/self.dt)
+
         ims = ['']*n
-        start_pos=np.argmin(abs(self.time-t0))
+        # select s colors from cmap
+        acolors = colormaps['rainbow'](np.linspace(0,1,len(s)))
         # set arrow properties for the arrow display mode
         arrow_props = dict(mutation_scale=20, arrowstyle='-|>', shrinkA=0, shrinkB=0)
-        # select s colors from 
-        acolors = colormaps['rainbow'](np.linspace(0,1,len(s)))
-		# for each timepoint, iterate through the selected frequencies, and add a point to the spin's
-		# trajectory for its' position at this timepoint.
+        # for each timepoint, iterate through the selected frequencies, and add a point to the spin's
+        # trajectory for its' position at this timepoint.
         for i in range(n):
             artist = []
-            for j,k in enumerate(s):
+            for j,k in enumerate(s): # j is the index, k is the value (point number)
                 # find the position of each spin j at point k
                 xline=self.traj[k,0,start_pos:i+start_pos+1]
                 yline=self.traj[k,1,start_pos:i+start_pos+1]
@@ -489,7 +542,7 @@ class trajectory:
                 if mode==('trace'):# or 'both'):
                     artist.append(ax.plot3D(xline, yline, zline, 'gray')[0])
                 if mode==('arrow'):# or 'both'):
-                    artist.append(ax.add_artist(Arrow3D([0,xline[-1]],[0,yline[-1]],[0,zline[-1]], color=acolors[j], **arrow_props)))
+                    artist.append(ax.add_artist(_Arrow3D([0,xline[-1]],[0,yline[-1]],[0,zline[-1]], color=acolors[j], **arrow_props)))
             artist.append(ax.plot_surface(x, y, z,color='gray',alpha=0.1))
             t=np.linspace(0,50,51)
             xhem=np.sin(t*np.pi*2/50)
@@ -500,6 +553,80 @@ class trajectory:
         self.ims=ims
         ani = animation.ArtistAnimation(fig=fig, artists=ims, interval=interval)
         ani.save(filename=filename,writer=writer)
+
+    def _plotly_frame_args(self,duration):
+        return {
+                "frame": {"duration": duration},
+                "mode": "immediate",
+                "fromcurrent": True,
+                "transition": {"duration": duration, "easing": "linear"},
+            }
+
+    def _bloch_plotly(self,s,n,start_pos,size,mode,interval):
+        '''
+        An internal method used by ``display_bloch`` to plot the bloch sphere using
+        interactive plotly.
+        '''
+        ## Make sphere
+        u = np.linspace(0, 2 * np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        x = np.outer(np.cos(u), np.sin(v))
+        y = np.outer(np.sin(u), np.sin(v))
+        z = np.outer(np.ones(np.size(u)), np.cos(v))
+
+        ## grab only the data we need from the 3D array
+        subset = self.traj[s,:,start_pos:start_pos+n]
+        ## now we need to flatten a 3d dataframe so it is indexed by the datapoint
+        names = ['s', 'd', 't'] #spin, dimension, and timepoint
+        index = pd.MultiIndex.from_product([range(s)for s in subset.shape], names=names)
+        df = pd.DataFrame({'s': subset.flatten()}, index=index)['s']
+        df = df.unstack(level='d').swaplevel().sort_index()
+        df.columns = ['x','y','z'] # unpacked dimensions
+        # df.reset_index(inplace=True) # convert s and t to columns
+        # print(df)
+        ## No builtin simple 3D animation in plotly, so we make our own.
+        ## Generate sphere surface
+        sphere = [go.Surface(x=x,y=y,z=z,opacity=0.2, colorscale=[(0,'grey'),(1,'grey')],showscale=False,hoverinfo='skip')]
+        ## generate an array of line3d objects of [nTimePoints, nSpins]. Each line3d points from [0,0,0] to the appropriate point on the bloch sphere
+        nspin = len(s)
+        frames = np.empty((n,nspin),dtype=object)
+        # print(frames.shape)
+        for tp in range(n):
+            for sp in range (nspin):
+                frames[tp,sp] = go.Scatter3d(x=[0,float(df.loc[(tp,sp),'x'])], y=[0,float(df.loc[(tp,sp),'y'])], z=[0,float(df.loc[(tp,sp),'z'])],mode='lines',
+                line=dict(width=5)) 
+        # print(frames)
+        fig = go.Figure(
+            data = [frames[0,i] for i in range(nspin)]+sphere,
+            #layout=go.Layout(updatemenus=[dict(type="buttons", buttons=[dict(label="▶", method="animate", args=[None])])]),
+            frames=[go.Frame(data=[frames[k,j] for j in range(nspin)]+sphere) for k in range(n)]
+        )
+        axis_attr = dict(range=[-1.1,1.1],showticklabels=False)
+        # sliders = [{"pad": {"b": 10, "t": 60},
+        #             "len": 0.9,
+        #             "x": 0.1,
+        #             "y": 0,
+        #             "steps": [{
+        #                 "args": [[f.name], self._plotly_frame_args(0)],
+        #                         "label": str(k),
+        #                         "method": "animate",
+        #             }
+        #             for k, f in enumerate(fig.frames)
+        #             ],}]
+
+        fig.update_layout(autosize=False, width=size[0]*100, height=size[1]*100, margin=dict(l=0, r=0, b=0, t=0), template='plotly_white', scene=dict(
+        xaxis=axis_attr,yaxis=axis_attr,zaxis=axis_attr),showlegend=False,updatemenus = [dict(type = "buttons",
+        buttons = [dict(
+                args = [None, {"frame": {"duration": interval/40},
+                                "fromcurrent": True, "transition": {"duration": 10}}],
+                label = "▶",
+                method = "animate",
+
+                )])])#, sliders=sliders)
+        # fig.update_layout(sliders=sliders)
+        print(fig.show())
+        
+        
 
 class pulse:
     '''

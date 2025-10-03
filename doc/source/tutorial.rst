@@ -103,6 +103,14 @@ select the spins closest to 0, 0.005, and 0.01 GHz.
 
 .. image:: _static/test_mult_spins.gif
 
+For an interactive plot, `plotlib` can be set to `pl` or `plotly`. The plot will
+now be show in an HTML canvas within the notebook. Pressing the play button will
+animate it. There is unfortunately no animation exporting built into Plotly.
+
+.. code:: python
+
+    trj.display_bloch(0,32,[0,0.005,0.01, 0.015],plotlib='pl',size=[6,6])
+
 We can also select a single spin, and plot it. We first extract the trajectory
 of the spin closest to $\nu=0$, then plot all three of its dimensions along
 the XY plane.
