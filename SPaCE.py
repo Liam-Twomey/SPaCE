@@ -457,20 +457,25 @@ class trajectory:
         mode: str
             Way that the spins are displayed. 'trace' shows their movement on the sphere,
             'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
+			Currently only used when ``plotlib==matplotlib``.
         plotlib: str
             Options are 'mpl'/'matplotlib' to use matplotlib, or 'pl'/'plotly' to use plotly.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
+			Only used when ``plotlib == mpl``.
         size: list of float
             Size (in inches) of the figure. Defaults to [5,5]
         dpi: float
-            Figure resolution, in dots per inch. Defaults to 150.
+            Figure resolution, in dots per inch. Defaults to 150. Only used when ``plotlib
+			== mpl``.
 
         Notes
         -----
         * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
           set on creation of the trajectory object. It cannot be updated when displaying
           the bloch sphere.
+		* This calls two different private functions, depending on the plotlib:
+		  ``_bloch_plotly()``, or ``_bloch_matplotlib()``.
         '''
         # Check if nu is a list of frequencies and find s, the frequencies of the trajectory
         # closest to the supplied values.
