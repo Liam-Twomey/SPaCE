@@ -23,7 +23,7 @@ Structure of the documentation:
         * ``_static/`` is a directory for images which need to be included in the
           documentation, which can then be incorporated with an image directive:
 
-.. code:: rst
+ .. code:: rst
 
     .. image:: _static/image.png
 
