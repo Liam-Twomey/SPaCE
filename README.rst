@@ -44,7 +44,7 @@ The documentation is built using Sphinx. To build the documentation:
 .. code:: bash
 
     cd doc
-    # intialize a venv if you want to use one
-    sphinx-build -b html ./source ./build
+    make html
 
-The html version of the documentation can now be found in `doc/build`.
+To view the html version of the documentation, open ``doc/build/html/index.html`` in a
+web browser. On Linux and MacOS, this can be done easily with ``firefox build/html/index.html``.

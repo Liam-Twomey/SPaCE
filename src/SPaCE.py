@@ -470,7 +470,7 @@ class trajectory:
 
         Notes
         -----
-        * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
+        * The delta t of the animation is dicated by the ``self.dt`` parameter,
           set on creation of the trajectory object. It cannot be updated when displaying
           the bloch sphere.
         * This calls two different private functions, depending on the plotlib:
