@@ -45,7 +45,6 @@ The documentation is built using Sphinx. To build the documentation:
 
     cd doc
     # intialize a venv if you want to use one
-    pip install sphinx sphinx-copybutton sphinx_design pydata_sphinx_theme
     sphinx-build -b html ./source ./build
 
 The html version of the documentation can now be found in `doc/build`.
