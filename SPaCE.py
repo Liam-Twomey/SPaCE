@@ -7,7 +7,7 @@ from matplotlib import colormaps
 from scipy.spatial.transform import Rotation as R
 from scipy.fft import fft,fftfreq,fftshift
 import scipy.stats
-# for bloch arrow mode
+# for bloch arrow mode in matplotlib
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 # for plotly
@@ -34,67 +34,66 @@ class _Arrow3D(FancyArrowPatch):
         return np.min(zs)
 
 class spin:
+    '''
+    The ``spin`` class generates an object which represents a collection of spins
+
+    Parameters
+    ----------
+    n : int
+        Number of spins to generate 
+    method: str
+        'Uniform' to distribute the spins evenly across the bandwidth,
+        'Histogram' to define a spectral shape (gaussian,etc.)
+    width : float
+        The bandwidth of the experiment, in GHz.
+    dist_file: list
+        list of lists, shape (2,n): [0] is the x axis of the spin population
+        distribution, [1] is the  y-axis. Used only by the histogram mode.
+    hyperfine: float 
+        (endor only) value of the hyperfine coupling between the electron
+        and the nucleus.
+    nuc: 
+        (endor only) number of nuclei coupled to the electron spin
+    dipolar: int
+        (endor only) the dipolar coupling between spins in the system (must be even)
+    S: float
+        (endor only) The electronic spin of the system.
+    ms: str
+        If not supplied, SPaCE assumes an even distribution across the m_s manifold.
+        If a path to a Numpy binary file containing a 1D array of values between -S
+        and S is provided, that population distribution is used instead.
+
+    Attributes
+    ----------
+    n: int
+        number of spins (set by ``n`` argument)
+    nu: np.array
+
+    ms: np.array
+        Values of $m_s$ available to the spins.
+    S: float
+        electronic spin of the system
+    hyperfine: float
+        (ENDOR only) Hyperfine coupling value for these spins with an electron.
+    n_nu: np.array
+        (ENDOR only) Each spin's deviation from the Larmour frequency at the
+        center of the band.
+    n_ms: np.array
+        (ENDOR only) Value of m_s for each spin
+
+    pairing: np.array
+        Used for distance measurements. (WIP)
+    dipolar: np.array
+        Dipolar coupling betweens spins. (WIP)
+    
+    Notes
+    -----
+    In the case of ENDOR mode, the n and nu attributes define the electron spin,
+    while  n_nu and n_ms define the precession frequency and m_s manifold for the nuclei.
+    '''
+
     def __init__(self,n:int,method:str='Uniform',width:float=1,dist_file:str=None,
         hyperfine:float=0, nuc:int=0,dipolar=0,S=1/2,ms=None):
-        '''
-        The ``spin`` class generates an object which represents a collection of spins
-
-        Parameters
-        ----------
-        n : int
-            Number of spins to generate 
-        method: str
-            'Uniform' to distribute the spins evenly across the bandwidth,
-            'Histogram' to define a spectral shape (gaussian,etc.)
-        width : float
-            The bandwidth of the experiment, in GHz.
-        dist_file: list
-            list of lists, shape (2,n): [0] is the x axis of the spin population
-            distribution, [1] is the  y-axis. Used only by the histogram mode.
-        hyperfine: float 
-            (endor only) value of the hyperfine coupling between the electron
-            and the nucleus.
-        nuc: 
-            (endor only) number of nuclei coupled to the electron spin
-        dipolar: int
-            (endor only) the dipolar coupling between spins in the system (must be even)
-        S: float
-            (endor only) The electronic spin of the system.
-        ms: str
-            If not supplied, SPaCE assumes an even distribution across the m_s manifold.
-            If a path to a Numpy binary file containing a 1D array of values between -S
-            and S is provided, that population distribution is used instead.
-
-        Attributes
-        ----------
-        n: int
-            number of spins (set by ``n`` argument)
-        nu: np.array
-
-        ms: np.array
-            Values of $m_s$ available to the spins.
-        S: float
-            electronic spin of the system
-       
-
-        hyperfine: float
-            (ENDOR only) Hyperfine coupling value for these spins with an electron.
-        n_nu: np.array
-            (ENDOR only) Each spin's deviation from the Larmour frequency at the
-            center of the band.
-        n_ms: np.array
-            (ENDOR only) Value of m_s for each spin
-
-        pairing: np.array
-            Used for distance measurements. (WIP)
-        dipolar: np.array
-            Dipolar coupling betweens spins. (WIP)
-        
-        Notes
-        -----
-        In the case of ENDOR mode, the n and nu attributes define the electron spin,
-        while  n_nu and n_ms define the precession frequency and m_s manifold for the nuclei.
-        '''
         self.n=n
         self.n_nu=np.zeros(n)
         self.hyperfine=hyperfine
@@ -457,25 +456,25 @@ class trajectory:
         mode: str
             Way that the spins are displayed. 'trace' shows their movement on the sphere,
             'arrow' shows the spins as arrows from the orgin to the trace, 'both' shows both.
-			Currently only used when ``plotlib==matplotlib``.
+            Currently only used when ``plotlib==matplotlib``.
         plotlib: str
             Options are 'mpl'/'matplotlib' to use matplotlib, or 'pl'/'plotly' to use plotly.
         writer: str
             A matplotlib.animation writer, dictates the engine used to print the output.
-			Only used when ``plotlib == mpl``.
+            Only used when ``plotlib == mpl``.
         size: list of float
             Size (in inches) of the figure. Defaults to [5,5]
         dpi: float
             Figure resolution, in dots per inch. Defaults to 150. Only used when ``plotlib
-			== mpl``.
+            == mpl``.
 
         Notes
         -----
         * The :math:`\Delta t` of the animation is dicated by the ``self.dt`` parameter,
           set on creation of the trajectory object. It cannot be updated when displaying
           the bloch sphere.
-		* This calls two different private functions, depending on the plotlib:
-		  ``_bloch_plotly()``, or ``_bloch_matplotlib()``.
+        * This calls two different private functions, depending on the plotlib:
+          ``_bloch_plotly()``, or ``_bloch_matplotlib()``.
         '''
         # Check if nu is a list of frequencies and find s, the frequencies of the trajectory
         # closest to the supplied values.
