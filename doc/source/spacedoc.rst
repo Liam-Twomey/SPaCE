@@ -10,5 +10,5 @@ SPaCE consists of three classes:
 * ``inversion``, which uses an FFT to estimate the behavior of spins under a pulse.
   Useful for testing pulses.
 
-.. automodule:: SPaCE
+.. automodule:: src.SPaCE
    :members:
